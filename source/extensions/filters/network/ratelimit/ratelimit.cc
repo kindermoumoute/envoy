@@ -48,7 +48,13 @@ Network::FilterStatus Filter::onNewConnection() {
     config_->stats().active_.inc();
     config_->stats().total_.inc();
     calling_limit_ = true;
-    client_->limit(*this, config_->domain(), config_->descriptors(), Tracing::NullSpan::instance());
+    std::vector<Envoy::RateLimit::Descriptor> descriptors;
+    descriptors = config_->descriptors();
+    RateLimit::Descriptor descriptor;
+    descriptor.entries_.push_back(
+        {"remote_address", filter_callbacks_->connection().remoteAddress()->ip()->addressAsString()});
+    descriptors.emplace_back(descriptor);
+    client_->limit(*this, config_->domain(), descriptors, Tracing::NullSpan::instance());
     calling_limit_ = false;
   }
 
